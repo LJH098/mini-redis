@@ -109,16 +109,7 @@ docker compose up --build
 
 브라우저에서 아래 주소로 접속합니다.
 
-- `http://localhost:8000`
-
-### 주요 파일
-
-- 백엔드: [web_app/main.py](/Users/jinhyuk/krafton/mini-redis/web_app/main.py)
-- mini redis 클라이언트: [web_app/mini_redis_client.py](/Users/jinhyuk/krafton/mini-redis/web_app/mini_redis_client.py)
-- 프론트엔드: [web_app/public/index.html](/Users/jinhyuk/krafton/mini-redis/web_app/public/index.html)
-- 스타일: [web_app/public/styles.css](/Users/jinhyuk/krafton/mini-redis/web_app/public/styles.css)
-- compose: [docker-compose.yml](/Users/jinhyuk/krafton/mini-redis/docker-compose.yml)
-
+- `http://localhost:8000
 ### 참고
 
 - `web` 컨테이너는 `host.docker.internal:6379`로 수동 실행 중인 mini redis에 접속합니다.

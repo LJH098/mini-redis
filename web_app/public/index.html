@@ -60,16 +60,18 @@
 
           <div class="latency-cards">
             <div class="latency-card">
-              <span>MongoDB</span>
+              <span>MongoDB warm avg</span>
               <strong id="mongo-ms">-</strong>
+              <small id="mongo-detail">cold - / median -</small>
             </div>
             <div class="latency-card">
-              <span>mini redis</span>
+              <span>mini redis warm avg</span>
               <strong id="redis-ms">-</strong>
+              <small id="redis-detail">cold - / median -</small>
             </div>
           </div>
 
-          <p id="faster-text" class="faster-text">버튼을 눌러 속도 차이를 비교해보세요.</p>
+          <p id="faster-text" class="faster-text">버튼을 누르면 25회 반복 측정해서 cold 1회와 warm 평균/중앙값을 보여줍니다.</p>
 
           <div class="payloads">
             <section>

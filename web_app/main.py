@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import statistics
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -120,14 +121,9 @@ def reset_game(request: ResetRequest):
 @app.get("/api/compare/profile")
 def compare_profile():
     document_id = config.compare_document_id
-
-    mongo_start = time.perf_counter()
-    mongo_profile = mongo_repository.get_profile(document_id)
-    mongo_ms = (time.perf_counter() - mongo_start) * 1000
-
-    redis_start = time.perf_counter()
-    cached_profile = redis_client.get(f"profile:{document_id}")
-    redis_ms = (time.perf_counter() - redis_start) * 1000
+    sample_count = 25
+    mongo_profile, mongo_samples = _benchmark_mongo(document_id, sample_count)
+    cached_profile, redis_samples = _benchmark_redis(document_id, sample_count)
 
     if mongo_profile is None:
         raise HTTPException(status_code=404, detail="profile not found")
@@ -135,12 +131,16 @@ def compare_profile():
     if cached_profile is None:
         redis_client.set(f"profile:{document_id}", json.dumps(mongo_profile))
         cached_profile = json.dumps(mongo_profile)
+        cached_profile, redis_samples = _benchmark_redis(document_id, sample_count)
 
     return {
         "documentId": document_id,
-        "mongoMs": round(mongo_ms, 3),
-        "redisMs": round(redis_ms, 3),
-        "faster": "mini redis" if redis_ms < mongo_ms else "mongodb",
+        "samples": sample_count,
+        "mongo": _summarize_samples(mongo_samples),
+        "redis": _summarize_samples(redis_samples),
+        "faster": "mini redis"
+        if _summarize_samples(redis_samples)["warmAverageMs"] < _summarize_samples(mongo_samples)["warmAverageMs"]
+        else "mongodb",
         "mongoProfile": mongo_profile,
         "redisProfile": json.loads(cached_profile),
     }
@@ -157,4 +157,35 @@ def _read_game_state():
             {"id": "left", "label": "Player A", "score": left_score},
             {"id": "right", "label": "Player B", "score": right_score},
         ],
+    }
+
+
+def _benchmark_mongo(document_id: str, sample_count: int):
+    samples: list[float] = []
+    profile = None
+    for _ in range(sample_count):
+        started = time.perf_counter()
+        profile = mongo_repository.get_profile(document_id)
+        samples.append((time.perf_counter() - started) * 1000)
+    return profile, samples
+
+
+def _benchmark_redis(document_id: str, sample_count: int):
+    samples: list[float] = []
+    cached_profile = None
+    redis_key = f"profile:{document_id}"
+    for _ in range(sample_count):
+        started = time.perf_counter()
+        cached_profile = redis_client.get(redis_key)
+        samples.append((time.perf_counter() - started) * 1000)
+    return cached_profile, samples
+
+
+def _summarize_samples(samples: list[float]) -> dict[str, float]:
+    warm_samples = samples[1:] or samples
+    return {
+        "coldMs": round(samples[0], 3),
+        "warmAverageMs": round(statistics.mean(warm_samples), 3),
+        "warmMedianMs": round(statistics.median(warm_samples), 3),
+        "bestMs": round(min(samples), 3),
     }
