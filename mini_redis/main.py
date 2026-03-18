@@ -23,6 +23,7 @@ def create_components(
     snapshot_manager.restore_from_disk()
     dispatcher = CommandDispatcher(storage=storage)
     dispatcher.register_many(default_handlers())
+    maintenance_step = _build_snapshot_maintenance_step(snapshot_manager)
     server = TcpServer(
         host=resolved_config.host,
         port=resolved_config.port,
@@ -30,6 +31,8 @@ def create_components(
         read_chunk_size=resolved_config.read_chunk_size,
         max_buffer_bytes=resolved_config.max_buffer_bytes,
         max_bulk_bytes=resolved_config.max_bulk_bytes,
+        maintenance_step=maintenance_step,
+        select_timeout_seconds=resolved_config.select_timeout_seconds,
     )
     return server, snapshot_manager
 
@@ -45,6 +48,19 @@ def main() -> None:
         server.serve_forever()
     finally:
         snapshot_manager.final_save()
+
+
+def _build_snapshot_maintenance_step(snapshot_manager: SnapshotManager):
+    last_snapshot_at: Optional[float] = None
+
+    def maintenance_step(now: float) -> None:
+        nonlocal last_snapshot_at
+        if not snapshot_manager.should_snapshot(last_snapshot_at, now=now):
+            return
+        snapshot_manager.save_now()
+        last_snapshot_at = now
+
+    return maintenance_step
 
 
 if __name__ == "__main__":
