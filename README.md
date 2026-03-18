@@ -48,6 +48,57 @@ Background
 7. 결과를 RESP 응답으로 직렬화해 `out_buffer`에 넣습니다.
 8. 소켓 write 이벤트 시 클라이언트로 응답을 보냅니다.
 
+## 중점 포인트
+1. 동시성 문제가 발생하지 않도록 하려면 어떤 아키텍처 또는 구조를 가져야 할지 고민해 봅니다.
+
+핵심 선택은 단일 selector 이벤트 루프입니다.
+TcpServer 하나가 여러 클라이언트 연결을 accept/read/write 이벤트로 처리하고, 요청 처리는 한 이벤트 루프 스레드 안에서 순차적으로 진행됩니다.
+그래서 여러 worker thread가 같은 저장소를 동시에 수정하는 구조가 아니고, Storage도 사실상 그 이벤트 루프가 소유하는 lock-free 구조입니다.
+> 즉 “락으로 막는 방식”보다 “애초에 동시에 같은 상태를 건드리지 않는 구조”를 택했습니다.
+
+- 관련 코드: mini_redis/server/tcp_server.py, mini_redis/core/storage.py
+
+2. 보관 기간이 만료된 값을 요청받았을 때, 이를 어떻게 처리할지 방안을 마련합니다.
+
+lazy expiration을 적용했습니다.
+GET, EXISTS, TTL처럼 key에 접근할 때 먼저 만료 여부를 확인하고, 이미 만료됐다면 그 순간 Storage에서 제거합니다.
+여기에 더해 이벤트 루프의 maintenance step이 주기적으로 전체 key를 sweep해서 expired key를 정리합니다.
+
+> 즉 “접근 시 정리 + 주기적 cleanup”을 같이 사용합니다.
+
+- 관련 코드: mini_redis/core/storage.py, mini_redis/core/commands/ttl.py, mini_redis/main.py
+
+3. 외부에서 쉽게 쓰도록 어떤 API 구조를 잡았나
+
+HTTP API가 아니라 RESP over TCP 구조를 택했습니다.
+> 즉 Redis와 비슷한 방식으로 6379 포트에 TCP로 붙고, 요청/응답은 RESP 프로토콜을 사용합니다.
+
+이 방식 덕분에 redis-cli 같은 도구나 custom TCP client로 바로 테스트할 수 있습니다.
+또 서버 바인딩 주소와 포트도 환경변수로 조정 가능하게 해서 EC2 같은 외부 환경에서도 붙기 쉽게 했습니다.
+우리 웹 데모도 내부적으로 이 mini redis에 TCP로 붙는 방식입니다.
+
+- 관련 코드: mini_redis/protocol/parser.py, mini_redis/protocol/serializer.py, mini_redis/config.py, web_app/mini_redis_client.py
+
+4. 저장된 데이터를 무효화하는 방식은 어떻게 했나
+
+무효화는 여러 방법으로 지원합니다.
+즉시 삭제:
+DEL: 특정 key 삭제
+FLUSHALL: 전체 key 삭제
+시간 기반 무효화:
+EXPIRE: key에 TTL 부여
+PERSIST: TTL 제거
+> 그래서 사용자는 “즉시 무효화”와 “시간 기반 무효화”를 모두 쓸 수 있습니다.
+
+관련 코드: mini_redis/core/commands/basic.py, mini_redis/core/commands/ttl.py
+
+5. 서버가 다운돼도 데이터를 최대한 안전하게 유지하려면 어떻게 했나
+
+현재는 snapshot persistence 방식을 적용했습니다.
+> 시작할 때 data/snapshot.json을 읽어서 메모리 상태를 복원하고, 실행 중에는 주기적으로 snapshot을 저장하며, 종료 시에도 마지막으로 한 번 더 저장합니다.
+
+- 관련 코드: mini_redis/persistence/snapshot.py, mini_redis/main.py
+
 ## TTL / Persistence
 
 ### TTL
