@@ -1,1 +1,0 @@
-{"foo": {"expire_at": null, "value": "bar"}, "profile:demo-user": {"expire_at": null, "value": "{\"favoriteMode\": \"tap-race\", \"headline\": \"MongoDB vs mini redis read benchmark\", \"level\": 12, \"name\": \"Latency Demo User\", \"id\": \"demo-user\"}"}}

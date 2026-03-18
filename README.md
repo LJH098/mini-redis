@@ -182,6 +182,36 @@ docker compose up --build
 python3 -m pytest -q
 ```
 
+## 부하테스트
+
+간단한 부하테스트 스크립트는 [scripts/load_test.py](/Users/jinhyuk/krafton/mini-redis/scripts/load_test.py) 에 있습니다.
+EC2 복붙용 실행 가이드와 발표 표 템플릿은 [docs/load-test-runbook.md](/Users/jinhyuk/krafton/mini-redis/docs/load-test-runbook.md) 에 정리했습니다.
+
+mini redis를 실행한 뒤 아래처럼 사용할 수 있습니다.
+
+```bash
+python3 -m mini_redis.main
+python3 scripts/load_test.py --host 127.0.0.1 --port 6379 --mode ping --workers 50 --requests 10000
+```
+
+예시:
+
+```bash
+python3 scripts/load_test.py --mode ping --workers 50 --requests 10000
+python3 scripts/load_test.py --mode get --workers 50 --requests 10000 --keyspace 200
+python3 scripts/load_test.py --mode set --workers 20 --requests 5000 --payload-size 128
+python3 scripts/load_test.py --mode incr --workers 20 --requests 5000
+python3 scripts/load_test.py --mode mixed --workers 30 --requests 8000
+```
+
+출력 항목:
+
+- `throughput`: 초당 처리 요청 수
+- `latency avg`: 평균 응답 시간
+- `latency median`: 중앙값
+- `latency p95 / p99`: 상위 지연 구간
+- `latency best / worst`: 최소 / 최대 응답 시간
+
 ## 핵심
 
 이 프로젝트의 핵심은 Redis와 비슷한 서버를 직접 구현하면서, 네트워크 처리, 프로토콜, 저장소, TTL, persistence를 각각 분리된 계층으로 설계했다는 점입니다.
