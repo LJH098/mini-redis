@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import tempfile
-import threading
 import time
 from typing import Any, Callable, Optional, Protocol
 
@@ -39,8 +38,6 @@ class SnapshotManager:
         self._restore_entries = restore_entries
         self._interval_seconds = interval_seconds
         self._time_fn = time_fn
-        self._stop_event = threading.Event()
-        self._thread: Optional[threading.Thread] = None
 
     def dump(
         self, entries: dict[str, SnapshotLike]
@@ -74,32 +71,34 @@ class SnapshotManager:
         payload = self.dump(self._export_entries())
         self._atomic_write(payload)
 
-    def start_autosave(self) -> None:
-        if self._interval_seconds <= 0:
-            return
-        if self._thread is not None and self._thread.is_alive():
-            return
+    @property
+    def interval_seconds(self) -> float:
+        return self._interval_seconds
 
-        self._stop_event.clear()
-        self._thread = threading.Thread(
-            target=self._autosave_loop,
-            daemon=True,
-            name="mini-redis-autosave",
-        )
-        self._thread.start()
+    def autosave_enabled(self) -> bool:
+        return self._interval_seconds > 0
 
-    def stop_autosave_and_join(self) -> None:
-        self._stop_event.set()
-        if self._thread is not None:
-            self._thread.join(timeout=max(1.0, self._interval_seconds + 1.0))
-            self._thread = None
+    def next_snapshot_at(self, last_snapshot_at: Optional[float]) -> Optional[float]:
+        if not self.autosave_enabled():
+            return None
+        if last_snapshot_at is None:
+            return self._time_fn() + self._interval_seconds
+        return last_snapshot_at + self._interval_seconds
+
+    def should_snapshot(
+        self,
+        last_snapshot_at: Optional[float],
+        *,
+        now: Optional[float] = None,
+    ) -> bool:
+        deadline = self.next_snapshot_at(last_snapshot_at)
+        if deadline is None:
+            return False
+        current_time = self._time_fn() if now is None else now
+        return current_time >= deadline
 
     def final_save(self) -> None:
         self.save_now()
-
-    def _autosave_loop(self) -> None:
-        while not self._stop_event.wait(self._interval_seconds):
-            self.save_now()
 
     def _normalize_live_entries(
         self, entries: dict[str, SnapshotLike]

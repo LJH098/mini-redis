@@ -37,10 +37,8 @@ def create_app() -> TcpServer:
 def main() -> None:
     server, snapshot_manager = create_components()
     try:
-        snapshot_manager.start_autosave()
         server.serve_forever()
     finally:
-        snapshot_manager.stop_autosave_and_join()
         snapshot_manager.final_save()
 
 
