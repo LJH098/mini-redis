@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+import threading
 from dataclasses import dataclass
 from typing import Optional
 
@@ -14,6 +15,10 @@ class MiniRedisClient:
     host: str
     port: int
     timeout_seconds: float = 2.0
+
+    def __post_init__(self) -> None:
+        self._lock = threading.Lock()
+        self._sock: Optional[socket.socket] = None
 
     def ping(self) -> str:
         return self._send(["PING"])
@@ -35,9 +40,31 @@ class MiniRedisClient:
 
     def _send(self, parts: list[str]):
         payload = self._encode(parts)
-        with socket.create_connection((self.host, self.port), timeout=self.timeout_seconds) as sock:
-            sock.sendall(payload)
-            return self._read_response(sock)
+        with self._lock:
+            sock = self._ensure_connection()
+            try:
+                sock.sendall(payload)
+                return self._read_response(sock)
+            except OSError:
+                self._reset_connection()
+                retry_sock = self._ensure_connection()
+                retry_sock.sendall(payload)
+                return self._read_response(retry_sock)
+
+    def _ensure_connection(self) -> socket.socket:
+        if self._sock is None:
+            self._sock = socket.create_connection((self.host, self.port), timeout=self.timeout_seconds)
+            self._sock.settimeout(self.timeout_seconds)
+        return self._sock
+
+    def _reset_connection(self) -> None:
+        if self._sock is None:
+            return
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+        self._sock = None
 
     @staticmethod
     def _encode(parts: list[str]) -> bytes:

@@ -4,6 +4,8 @@ const scoreRight = document.getElementById("score-right");
 const winnerBanner = document.getElementById("winner-banner");
 const mongoMs = document.getElementById("mongo-ms");
 const redisMs = document.getElementById("redis-ms");
+const mongoDetail = document.getElementById("mongo-detail");
+const redisDetail = document.getElementById("redis-detail");
 const fasterText = document.getElementById("faster-text");
 const mongoPayload = document.getElementById("mongo-payload");
 const redisPayload = document.getElementById("redis-payload");
@@ -61,9 +63,11 @@ async function resetGame() {
 
 async function measureLatency() {
   const data = await requestJson("/api/compare/profile");
-  mongoMs.textContent = `${data.mongoMs} ms`;
-  redisMs.textContent = `${data.redisMs} ms`;
-  fasterText.textContent = `${data.faster}가 더 빨랐습니다. 같은 프로필을 두 저장소에서 읽어 비교했습니다.`;
+  mongoMs.textContent = `${data.mongo.warmAverageMs} ms`;
+  redisMs.textContent = `${data.redis.warmAverageMs} ms`;
+  mongoDetail.textContent = `cold ${data.mongo.coldMs} ms / median ${data.mongo.warmMedianMs} ms`;
+  redisDetail.textContent = `cold ${data.redis.coldMs} ms / median ${data.redis.warmMedianMs} ms`;
+  fasterText.textContent = `${data.samples}회 반복 측정 기준으로 ${data.faster}의 warm average가 더 빨랐습니다. 첫 1회는 cold 성격으로 따로 표시했습니다.`;
   mongoPayload.textContent = JSON.stringify(data.mongoProfile, null, 2);
   redisPayload.textContent = JSON.stringify(data.redisProfile, null, 2);
 }
