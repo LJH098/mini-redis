@@ -44,7 +44,7 @@ class SnapshotManager:
 
     def dump(
         self, entries: dict[str, SnapshotLike]
-    ) -> dict[str, dict[str, Optional[float] | str]]:
+    ) -> dict[str, dict[str, object]]:
         records = self._normalize_live_entries(entries)
         return {
             key: {"value": record.value, "expire_at": record.expire_at}

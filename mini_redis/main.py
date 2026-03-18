@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 from mini_redis.config import ServerConfig
 from mini_redis.core.dispatcher import CommandDispatcher, default_handlers
 from mini_redis.core.storage import Storage
@@ -7,8 +9,8 @@ from mini_redis.server.tcp_server import TcpServer
 
 
 def create_components(
-    config: ServerConfig | None = None,
-) -> tuple[TcpServer, SnapshotManager]:
+    config: Optional[ServerConfig] = None,
+) -> Tuple[TcpServer, SnapshotManager]:
     resolved_config = config or ServerConfig()
     storage = Storage()
     storage.set_expiration_checker(get_expiration_manager().is_expired)
@@ -25,6 +27,9 @@ def create_components(
         host=resolved_config.host,
         port=resolved_config.port,
         dispatcher=dispatcher,
+        read_chunk_size=resolved_config.read_chunk_size,
+        max_buffer_bytes=resolved_config.max_buffer_bytes,
+        max_bulk_bytes=resolved_config.max_bulk_bytes,
     )
     return server, snapshot_manager
 
