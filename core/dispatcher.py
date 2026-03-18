@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Optional
 
 from core.commands.basic import handle_get, handle_ping, handle_set
 from core.commands.keyspace import handle_del, handle_exists
@@ -11,7 +12,7 @@ CommandHandler = Callable[[StorageEngine, list[str]], Response]
 
 
 class CommandDispatcher:
-    def __init__(self, storage: StorageEngine | None = None) -> None:
+    def __init__(self, storage: Optional[StorageEngine] = None) -> None:
         self.storage = storage or StorageEngine()
         self.handlers: dict[str, CommandHandler] = {}
         self.register_many(

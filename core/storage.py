@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Optional
 
 from .models import Entry
 
@@ -8,13 +9,13 @@ ExpirationChecker = Callable[[Entry], bool]
 
 
 class StorageEngine:
-    def __init__(self, expiration_checker: ExpirationChecker | None = None) -> None:
+    def __init__(self, expiration_checker: Optional[ExpirationChecker] = None) -> None:
         self._store: dict[str, Entry] = {}
         self._expiration_checker = expiration_checker
 
     def set_expiration_checker(
         self,
-        expiration_checker: ExpirationChecker | None,
+        expiration_checker: Optional[ExpirationChecker],
     ) -> None:
         self._expiration_checker = expiration_checker
 
@@ -24,12 +25,12 @@ class StorageEngine:
         self._store[normalized_key] = entry
         return entry
 
-    def get_entry(self, key: str) -> Entry | None:
+    def get_entry(self, key: str) -> Optional[Entry]:
         normalized_key = str(key)
         entry = self._store.get(normalized_key)
         return self._evict_if_expired(normalized_key, entry)
 
-    def get(self, key: str) -> str | None:
+    def get(self, key: str) -> Optional[str]:
         entry = self.get_entry(key)
         return entry.value if entry is not None else None
 
@@ -72,7 +73,7 @@ class StorageEngine:
         for key in list(self._store.keys()):
             self.get_entry(key)
 
-    def _evict_if_expired(self, key: str, entry: Entry | None) -> Entry | None:
+    def _evict_if_expired(self, key: str, entry: Optional[Entry]) -> Optional[Entry]:
         if entry is None:
             return None
         if self._expiration_checker is None:

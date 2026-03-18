@@ -1,11 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Union
-
-
-@dataclass
-class Entry:
-    value: str
-    expire_at: Optional[float] = None
+from typing import Union
 
 
 @dataclass(frozen=True)
@@ -25,7 +19,7 @@ class Integer:
 
 @dataclass(frozen=True)
 class NullBulkString:
-    value: None = None
+    pass
 
 
 @dataclass(frozen=True)
@@ -33,4 +27,4 @@ class RespError:
     message: str
 
 
-Response = Union[SimpleString, BulkString, Integer, NullBulkString, RespError]
+RespValue = Union[SimpleString, BulkString, Integer, NullBulkString, RespError]
