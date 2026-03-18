@@ -56,3 +56,10 @@ def handle_incr(storage: Storage, command: list[str]) -> RespValue:
         return Integer(storage.increment(command[1]))
     except ValueError:
         return RespError("value is not an integer")
+
+
+def handle_flushall(storage: Storage, command: list[str]) -> RespValue:
+    if len(command) != 1:
+        return wrong_arity()
+    storage.clear()
+    return SimpleString("OK")

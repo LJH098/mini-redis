@@ -3,6 +3,7 @@ from collections.abc import Callable
 from mini_redis.core.commands.basic import (
     handle_del,
     handle_exists,
+    handle_flushall,
     handle_get,
     handle_incr,
     handle_ping,
@@ -49,6 +50,7 @@ def default_handlers() -> dict[str, CommandHandler]:
         "DEL": handle_del,
         "EXISTS": handle_exists,
         "INCR": handle_incr,
+        "FLUSHALL": handle_flushall,
         "EXPIRE": handle_expire,
         "TTL": handle_ttl,
         "PERSIST": handle_persist,

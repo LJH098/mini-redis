@@ -61,6 +61,15 @@ class CommandDispatcherTest(unittest.TestCase):
 
         self.assertEqual(reply, RespError("value is not an integer"))
 
+    def test_flushall_clears_entire_store(self) -> None:
+        self.dispatcher.dispatch(["SET", "alpha", "1"])
+        self.dispatcher.dispatch(["SET", "beta", "2"])
+
+        reply = self.dispatcher.dispatch(["FLUSHALL"])
+
+        self.assertEqual(reply, SimpleString("OK"))
+        self.assertEqual(self.storage.size(), 0)
+
     def test_unknown_command(self) -> None:
         reply = self.dispatcher.dispatch(["NOPE"])
         self.assertEqual(reply, RespError("unknown command"))

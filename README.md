@@ -71,6 +71,7 @@ Background
 - `DEL key [key ...]`
 - `EXISTS key [key ...]`
 - `INCR key`
+- `FLUSHALL`
 - `EXPIRE key seconds`
 - `TTL key`
 - `PERSIST key`
@@ -211,6 +212,22 @@ python3 scripts/load_test.py --mode mixed --workers 30 --requests 8000
 - `latency median`: 중앙값
 - `latency p95 / p99`: 상위 지연 구간
 - `latency best / worst`: 최소 / 최대 응답 시간
+
+### EC2 측정 결과
+
+EC2에서 실제로 측정한 결과는 아래와 같습니다.
+
+| 시나리오 | workers | requests | throughput (req/s) | avg (ms) | median (ms) | p95 (ms) | p99 (ms) | errors |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| PING | 50 | 10000 | 11905.73 | 3.996 | 2.804 | 12.308 | 17.031 | 0 |
+| GET | 50 | 10000 | 15795.39 | 3.119 | 3.091 | 3.314 | 3.845 | 0 |
+| MIXED | 30 | 8000 | 8536.14 | 3.489 | 3.522 | 3.678 | 3.842 | 0 |
+
+요약:
+
+- `GET` 시나리오에서 가장 높은 처리량을 보였습니다.
+- `MIXED` 시나리오에서도 `8.5K req/s` 수준으로 안정적으로 동작했습니다.
+- 세 시나리오 모두 `errors = 0`으로 측정되었습니다.
 
 ## 핵심
 
