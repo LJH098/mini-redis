@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from core.models import BulkString, NullBulkString, RespError, SimpleString
+from core.models import BulkString, NullBulkString, RespError, Response, SimpleString
 from core.storage import StorageEngine
 
 
-def handle_ping(_storage: StorageEngine, command: list[str]):
+def handle_ping(_storage: StorageEngine, command: list[str]) -> Response:
     if len(command) not in (1, 2):
         return RespError("wrong number of arguments")
 
@@ -14,7 +14,7 @@ def handle_ping(_storage: StorageEngine, command: list[str]):
     return BulkString(command[1])
 
 
-def handle_set(storage: StorageEngine, command: list[str]):
+def handle_set(storage: StorageEngine, command: list[str]) -> Response:
     if len(command) != 3:
         return RespError("wrong number of arguments")
 
@@ -22,7 +22,7 @@ def handle_set(storage: StorageEngine, command: list[str]):
     return SimpleString("OK")
 
 
-def handle_get(storage: StorageEngine, command: list[str]):
+def handle_get(storage: StorageEngine, command: list[str]) -> Response:
     if len(command) != 2:
         return RespError("wrong number of arguments")
 

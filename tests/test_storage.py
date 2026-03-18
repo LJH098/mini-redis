@@ -39,6 +39,33 @@ class StorageEngineTest(unittest.TestCase):
         self.assertTrue(self.storage.clear_expire_at("cache:key"))
         self.assertIsNone(self.storage.get_entry("cache:key").expire_at)
 
+    def test_expired_entry_is_deleted_on_get(self) -> None:
+        storage = StorageEngine(expiration_checker=lambda entry: entry.expire_at == 1.0)
+        storage.set("cache:key", "value")
+        storage.set_expire_at("cache:key", 1.0)
+
+        self.assertIsNone(storage.get("cache:key"))
+        self.assertFalse(storage.exists("cache:key"))
+        self.assertEqual(storage.size(), 0)
+
+    def test_keys_filters_out_expired_entries(self) -> None:
+        storage = StorageEngine(expiration_checker=lambda entry: entry.expire_at == 1.0)
+        storage.set("alive", "v1")
+        storage.set("expired", "v2")
+        storage.set_expire_at("expired", 1.0)
+
+        self.assertEqual(storage.keys(), ["alive"])
+        self.assertEqual(storage.size(), 1)
+
+    def test_expiration_checker_can_be_injected_later(self) -> None:
+        self.storage.set("cache:key", "value")
+        self.storage.set_expire_at("cache:key", 1.0)
+
+        self.storage.set_expiration_checker(lambda entry: entry.expire_at == 1.0)
+
+        self.assertIsNone(self.storage.get_entry("cache:key"))
+        self.assertFalse(self.storage.exists("cache:key"))
+
 
 if __name__ == "__main__":
     unittest.main()

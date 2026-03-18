@@ -52,6 +52,51 @@ class CommandDispatcherTest(unittest.TestCase):
         reply = self.dispatcher.dispatch([])
         self.assertEqual(reply, RespError("invalid command"))
 
+    def test_can_register_ttl_handlers_without_changing_dispatcher(self) -> None:
+        def handle_expire(storage: StorageEngine, command: list[str]):
+            if len(command) != 3:
+                return RespError("wrong number of arguments")
+            updated = storage.set_expire_at(command[1], float(command[2]))
+            return Integer(1 if updated else 0)
+
+        self.storage.set("cache:key", "value")
+        self.dispatcher.register("EXPIRE", handle_expire)
+
+        reply = self.dispatcher.dispatch(["EXPIRE", "cache:key", "10"])
+
+        self.assertEqual(reply, Integer(1))
+        self.assertEqual(self.storage.get_entry("cache:key").expire_at, 10.0)
+
+    def test_register_many_supports_external_ttl_commands(self) -> None:
+        def handle_ttl(storage: StorageEngine, command: list[str]):
+            if len(command) != 2:
+                return RespError("wrong number of arguments")
+
+            entry = storage.get_entry(command[1])
+            if entry is None:
+                return Integer(-2)
+            if entry.expire_at is None:
+                return Integer(-1)
+            return Integer(int(entry.expire_at))
+
+        def handle_persist(storage: StorageEngine, command: list[str]):
+            if len(command) != 2:
+                return RespError("wrong number of arguments")
+            cleared = storage.clear_expire_at(command[1])
+            return Integer(1 if cleared else 0)
+
+        self.storage.set("cache:key", "value")
+        self.storage.set_expire_at("cache:key", 15.0)
+        self.dispatcher.register_many({"TTL": handle_ttl, "PERSIST": handle_persist})
+
+        ttl_reply = self.dispatcher.dispatch(["TTL", "cache:key"])
+        persist_reply = self.dispatcher.dispatch(["PERSIST", "cache:key"])
+        ttl_after_reply = self.dispatcher.dispatch(["TTL", "cache:key"])
+
+        self.assertEqual(ttl_reply, Integer(15))
+        self.assertEqual(persist_reply, Integer(1))
+        self.assertEqual(ttl_after_reply, Integer(-1))
+
 
 if __name__ == "__main__":
     unittest.main()
