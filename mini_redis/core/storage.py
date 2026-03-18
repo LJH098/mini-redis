@@ -86,6 +86,17 @@ class Storage:
         entry.expire_at = None
         return True
 
+    def cleanup_expired(self) -> int:
+        """Synchronously sweep expired keys in the event-loop thread."""
+        removed = 0
+        for key in list(self._store.keys()):
+            entry = self._store.get(key)
+            if entry is None:
+                continue
+            if self._purge_if_expired(key, entry):
+                removed += 1
+        return removed
+
     def keys(self) -> list[str]:
         available_keys: list[str] = []
         for key in list(self._store.keys()):
