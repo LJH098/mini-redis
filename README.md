@@ -181,6 +181,6 @@ docker compose up --build
 python3 -m pytest -q
 ```
 
-=====
+## 핵심
 
 이 프로젝트의 핵심은 Redis와 비슷한 서버를 직접 구현하면서, 네트워크 처리, 프로토콜, 저장소, TTL, persistence를 각각 분리된 계층으로 설계했다는 점입니다.
