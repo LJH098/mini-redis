@@ -72,6 +72,9 @@ class StorageEngine:
         entry.expire_at = None
         return True
 
+    def clear(self) -> None:
+        self._store.clear()
+
     def size(self) -> int:
         self._cleanup_expired_keys()
         return len(self._store)

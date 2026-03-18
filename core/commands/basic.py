@@ -41,3 +41,11 @@ def handle_incr(storage: StorageEngine, command: list[str]) -> Response:
         return Integer(storage.increment(command[1]))
     except ValueError:
         return RespError("value is not an integer")
+
+
+def handle_flushall(storage: StorageEngine, command: list[str]) -> Response:
+    if len(command) != 1:
+        return RespError("wrong number of arguments")
+
+    storage.clear()
+    return SimpleString("OK")

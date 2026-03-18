@@ -99,6 +99,9 @@ class Storage:
         entry.expire_at = None
         return True
 
+    def clear(self) -> None:
+        self._store.clear()
+
     def cleanup_expired(self) -> int:
         """Synchronously sweep expired keys in the event-loop thread."""
         removed = 0
