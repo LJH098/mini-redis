@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 import time
-
 import pytest
 
 from mini_redis.config import ServerConfig
@@ -210,28 +209,40 @@ def test_atomic_write_failure_preserves_existing_snapshot(
     assert json.loads(snapshot_path.read_text(encoding="utf-8")) == original_payload
 
 
-def test_autosave_shutdown_produces_valid_snapshot(tmp_path: Path) -> None:
-    snapshot_path = tmp_path / "snapshot.json"
+def test_snapshot_due_is_reported_without_background_thread(tmp_path: Path) -> None:
+    current_time = [100.0]
     storage = Storage()
-    storage.set("foo", "bar")
-    manager = make_snapshot_manager(snapshot_path, storage, interval_seconds=0.05)
+    manager = make_snapshot_manager(
+        tmp_path / "snapshot.json",
+        storage,
+        interval_seconds=30.0,
+        time_fn=lambda: current_time[0],
+    )
 
-    manager.start_autosave()
-    time.sleep(0.12)
-    manager.stop_autosave_and_join()
-    manager.final_save()
+    assert manager.autosave_enabled() is True
+    assert manager.next_snapshot_at(None) == 130.0
+    assert manager.should_snapshot(None, now=129.9) is False
+    assert manager.should_snapshot(None, now=130.0) is True
+    assert manager.next_snapshot_at(130.0) == 160.0
+    assert manager.should_snapshot(130.0, now=159.9) is False
+    assert manager.should_snapshot(130.0, now=160.0) is True
 
-    assert json.loads(snapshot_path.read_text(encoding="utf-8"))["foo"]["value"] == "bar"
+
+def test_snapshot_due_is_disabled_when_interval_is_zero(tmp_path: Path) -> None:
+    storage = Storage()
+    manager = make_snapshot_manager(tmp_path / "snapshot.json", storage, interval_seconds=0.0)
+
+    assert manager.autosave_enabled() is False
+    assert manager.next_snapshot_at(None) is None
+    assert manager.should_snapshot(None, now=100.0) is False
 
 
-def test_shutdown_without_autosave_still_final_saves(tmp_path: Path) -> None:
+def test_final_save_still_writes_snapshot_without_background_autosave(tmp_path: Path) -> None:
     snapshot_path = tmp_path / "snapshot.json"
     storage = Storage()
     storage.set("foo", "bar")
     manager = make_snapshot_manager(snapshot_path, storage, interval_seconds=0.0)
 
-    manager.start_autosave()
-    manager.stop_autosave_and_join()
     manager.final_save()
 
     assert json.loads(snapshot_path.read_text(encoding="utf-8"))["foo"]["value"] == "bar"
