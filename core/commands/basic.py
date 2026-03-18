@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from core.models import BulkString, NullBulkString, RespError, Response, SimpleString
+from core.models import BulkString, Integer, NullBulkString, RespError, Response, SimpleString
 from core.storage import StorageEngine
 
 
@@ -31,3 +31,13 @@ def handle_get(storage: StorageEngine, command: list[str]) -> Response:
         return NullBulkString()
 
     return BulkString(value)
+
+
+def handle_incr(storage: StorageEngine, command: list[str]) -> Response:
+    if len(command) != 2:
+        return RespError("wrong number of arguments")
+
+    try:
+        return Integer(storage.increment(command[1]))
+    except ValueError:
+        return RespError("value is not an integer")

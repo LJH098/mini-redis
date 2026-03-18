@@ -47,3 +47,12 @@ def handle_exists(storage: Storage, command: list[str]) -> RespValue:
     if len(command) < 2:
         return wrong_arity()
     return Integer(storage.exists(*command[1:]))
+
+
+def handle_incr(storage: Storage, command: list[str]) -> RespValue:
+    if len(command) != 2:
+        return wrong_arity()
+    try:
+        return Integer(storage.increment(command[1]))
+    except ValueError:
+        return RespError("value is not an integer")

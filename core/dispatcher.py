@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Optional
 
-from core.commands.basic import handle_get, handle_ping, handle_set
+from core.commands.basic import handle_get, handle_incr, handle_ping, handle_set
 from core.commands.keyspace import handle_del, handle_exists
 from core.models import RespError, Response
 from core.storage import StorageEngine
@@ -20,6 +20,7 @@ class CommandDispatcher:
                 "PING": handle_ping,
                 "SET": handle_set,
                 "GET": handle_get,
+                "INCR": handle_incr,
                 "DEL": handle_del,
                 "EXISTS": handle_exists,
             }

@@ -40,6 +40,27 @@ class CommandDispatcherTest(unittest.TestCase):
         self.assertEqual(delete_reply, Integer(1))
         self.assertEqual(exists_after, Integer(0))
 
+    def test_incr_starts_missing_key_at_one(self) -> None:
+        reply = self.dispatcher.dispatch(["INCR", "likes"])
+
+        self.assertEqual(reply, Integer(1))
+        self.assertEqual(self.storage.get("likes"), "1")
+
+    def test_incr_increments_existing_integer(self) -> None:
+        self.dispatcher.dispatch(["SET", "likes", "9"])
+
+        reply = self.dispatcher.dispatch(["INCR", "likes"])
+
+        self.assertEqual(reply, Integer(10))
+        self.assertEqual(self.storage.get("likes"), "10")
+
+    def test_incr_rejects_non_integer_values(self) -> None:
+        self.dispatcher.dispatch(["SET", "likes", "many"])
+
+        reply = self.dispatcher.dispatch(["INCR", "likes"])
+
+        self.assertEqual(reply, RespError("value is not an integer"))
+
     def test_unknown_command(self) -> None:
         reply = self.dispatcher.dispatch(["NOPE"])
         self.assertEqual(reply, RespError("unknown command"))

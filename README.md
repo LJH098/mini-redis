@@ -82,6 +82,51 @@ MINI_REDIS_HOST=0.0.0.0 MINI_REDIS_PORT=6379 python3 -m mini_redis.main
 
 ---
 
+## 웹 데모 구성
+
+이 저장소에는 다음 기능을 보여주는 웹 데모가 포함되어 있습니다.
+
+- 좋아요 버튼을 먼저 `10`번 누른 사람이 이기는 게임
+- 같은 데이터를 `MongoDB`와 `mini redis`에서 각각 읽고 응답 시간을 비교하는 데모
+
+구성은 다음과 같습니다.
+
+- `mini redis`: 수동 실행
+- `web`: FastAPI 서버 + 정적 프론트엔드
+- `mongo`: MongoDB
+
+### 1. mini redis 실행
+
+```bash
+python3 -m mini_redis.main
+```
+
+### 2. 웹 서버와 MongoDB 실행
+
+```bash
+docker compose up --build
+```
+
+브라우저에서 아래 주소로 접속합니다.
+
+- `http://localhost:8000`
+
+### 주요 파일
+
+- 백엔드: [web_app/main.py](/Users/jinhyuk/krafton/mini-redis/web_app/main.py)
+- mini redis 클라이언트: [web_app/mini_redis_client.py](/Users/jinhyuk/krafton/mini-redis/web_app/mini_redis_client.py)
+- 프론트엔드: [web_app/public/index.html](/Users/jinhyuk/krafton/mini-redis/web_app/public/index.html)
+- 스타일: [web_app/public/styles.css](/Users/jinhyuk/krafton/mini-redis/web_app/public/styles.css)
+- compose: [docker-compose.yml](/Users/jinhyuk/krafton/mini-redis/docker-compose.yml)
+
+### 참고
+
+- `web` 컨테이너는 `host.docker.internal:6379`로 수동 실행 중인 mini redis에 접속합니다.
+- Linux 환경 지원을 위해 compose에 `host-gateway` 매핑을 넣었습니다.
+- 좋아요 게임 카운트를 위해 mini redis에 `INCR` 명령도 추가했습니다.
+
+---
+
 ## 4인 협업 구조
 
 이 프로젝트는 계층 기반으로 역할을 분리하여 4명이 병렬로 개발할 수 있도록 설계합니다.

@@ -32,6 +32,19 @@ class Storage:
         self._store[key] = entry
         return entry
 
+    def increment(self, key: str, amount: int = 1) -> int:
+        entry = self.get_entry(key)
+        if entry is None:
+            value = amount
+            self._store[key] = Entry(value=str(value))
+            return value
+        try:
+            value = int(entry.value) + amount
+        except ValueError as exc:
+            raise ValueError("value is not an integer") from exc
+        entry.value = str(value)
+        return value
+
     def _is_expired(self, entry: Entry) -> bool:
         if self._expiration_checker is None:
             return False
