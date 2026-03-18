@@ -4,6 +4,7 @@ from core.models import Entry
 from core.storage import StorageEngine
 from mini_redis.core.storage import Storage
 from mini_redis.expiration.manager import get_expiration_manager
+from mini_redis.persistence.snapshot import SnapshotRecord
 
 
 class StorageEngineTest(unittest.TestCase):
@@ -96,6 +97,28 @@ def test_storage_lazily_deletes_expired_keys() -> None:
     assert storage.size() == 0
 
     expiration_manager.set_current_time(None)
+
+
+def test_storage_export_entries_returns_independent_copy() -> None:
+    storage = Storage()
+    storage.set("foo", "bar")
+
+    exported = storage.export_entries()
+    exported["foo"].value = "changed"
+    exported["new"] = Entry(value="other")
+
+    assert storage.get("foo") == "bar"
+    assert storage.get("new") is None
+
+
+def test_storage_restore_entries_replaces_existing_state() -> None:
+    storage = Storage()
+    storage.set("old", "value")
+
+    storage.restore_entries({"fresh": SnapshotRecord(value="new", expire_at=None)})
+
+    assert storage.get("old") is None
+    assert storage.get("fresh") == "new"
 
 
 if __name__ == "__main__":
