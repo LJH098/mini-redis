@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Redis 소개</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --panel: #fffdf8;
+      --ink: #1f2937;
+      --muted: #5b6472;
+      --line: #d8cfbf;
+      --accent: #0f766e;
+      --accent-soft: #dff3ef;
+      --code: #f3efe5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      line-height: 1.7;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, #efe5d0 0%, transparent 30%),
+        radial-gradient(circle at bottom left, #dbe9e4 0%, transparent 35%),
+        var(--bg);
+    }
+
+    .wrap {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    .hero {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 36px;
+      box-shadow: 0 16px 40px rgba(54, 61, 74, 0.08);
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 12px;
+      line-height: 1.25;
+    }
+
+    h1 { font-size: 42px; }
+    h2 { font-size: 28px; margin-top: 34px; }
+    h3 { font-size: 20px; margin-top: 24px; }
+
+    p {
+      margin: 0 0 14px;
+      color: var(--ink);
+    }
+
+    .lead {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 760px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .flow {
+      background: #143b3b;
+      color: #f4fbfa;
+      border-radius: 18px;
+      padding: 20px;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      overflow-x: auto;
+      border: 1px solid #0b2d2d;
+    }
+
+    pre, code {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    pre {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 14px 0 18px;
+    }
+
+    ul {
+      margin: 0 0 18px 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 28px rgba(54, 61, 74, 0.05);
+    }
+
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      background: #f2fbf9;
+      border-radius: 10px;
+      color: var(--muted);
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Mini Redis Overview</div>
+      <h1>Mini Redis 소개</h1>
+      <p class="lead">
+        이 프로젝트는 Redis의 핵심 구조를 TCP, RESP, Storage, TTL, Persistence 계층으로 나눠 직접 구현해 보는 mini redis 프로젝트다.
+        단순한 딕셔너리가 아니라, 네트워크로 명령을 받고 응답을 돌려주는 서버 구조를 만드는 것이 목표다.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>한눈에 보기</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Redis</h3>
+          <p>메모리 안에 데이터를 저장하고 네트워크로 명령을 받아 처리하는 서버.</p>
+        </div>
+        <div class="card">
+          <h3>TCP</h3>
+          <p>연결 기반 바이트 스트림. 메시지 경계가 없어서 프로토콜 파싱이 필요하다.</p>
+        </div>
+        <div class="card">
+          <h3>RESP</h3>
+          <p>Redis가 쓰는 요청/응답 포맷. 배열과 bulk string을 통해 명령을 명확하게 표현한다.</p>
+        </div>
+        <div class="card">
+          <h3>Event Loop</h3>
+          <p>여러 연결을 받아도 명령 실행은 한 스레드에서 순차 처리하는 구조.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>핵심 흐름</h2>
+      <div class="flow">클라이언트
+-> TCP 연결
+-> RESP 요청 bytes
+-> parser
+-> ["SET", "foo", "bar"]
+-> dispatcher
+-> handler
+-> storage
+-> RespValue
+-> serializer
+-> RESP 응답 bytes</div>
+    </section>
+
+    <section class="section">
+      <h2>우리 프로젝트 구조</h2>
+      <pre><code>mini_redis/
+  main.py
+  config.py
+  core/
+    models.py
+    storage.py
+    dispatcher.py
+    commands/
+      basic.py
+      ttl.py
+  expiration/
+    manager.py
+    cleanup.py
+  protocol/
+    parser.py
+    serializer.py
+    resp_types.py
+  persistence/
+    snapshot.py
+    aof.py
+  server/
+    tcp_server.py
+    session.py</code></pre>
+
+      <div class="grid">
+        <div class="card">
+          <h3>core</h3>
+          <p>데이터 저장소와 명령 처리의 중심축.</p>
+        </div>
+        <div class="card">
+          <h3>protocol</h3>
+          <p>RESP 요청 파싱과 응답 직렬화.</p>
+        </div>
+        <div class="card">
+          <h3>expiration</h3>
+          <p>TTL 계산, 만료 판정, cleanup 보조 구조.</p>
+        </div>
+        <div class="card">
+          <h3>persistence</h3>
+          <p>snapshot 저장/복구와 AOF 확장 포인트.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2번 역할의 핵심</h2>
+      <p>2번은 이 프로젝트의 중심축인 Storage와 Dispatcher를 맡는다.</p>
+      <ul>
+        <li><code>Entry(value, expire_at)</code> 모델을 유지해서 TTL이 자연스럽게 붙도록 설계한다.</li>
+        <li>Dispatcher가 명령어를 알맞은 handler에 연결한다.</li>
+        <li>Storage는 실제 메모리 상태를 관리한다.</li>
+        <li>만료 여부는 ExpirationManager가 판단하고, 실제 삭제는 Storage가 수행한다.</li>
+      </ul>
+
+      <div class="note">
+        이번 2번 PR의 핵심은 storage lock을 제거하고, 단일 스레드 event-loop 전제에 맞는 lock-free storage로 정리한 것이다.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>SET 요청 예시</h2>
+      <pre><code>["SET", "foo", "bar"]
+-> dispatcher.dispatch(...)
+-> handle_set(...)
+-> storage.set("foo", "bar")
+-> Entry(value="bar", expire_at=None)
+-> SimpleString("OK")
+-> +OK\r\n</code></pre>
+    </section>
+
+    <section class="section">
+      <h2>TTL 요청 예시</h2>
+      <pre><code>["EXPIRE", "foo", "10"]
+-> handle_expire(...)
+-> expiration_manager.build_expire_at(10)
+-> storage.set_expire_at("foo", expire_at)
+-> Integer(1)</code></pre>
+
+      <pre><code>["GET", "foo"]
+-> storage.get_entry("foo")
+-> 만료면 purge
+-> 없으면 NullBulkString()
+-> 있으면 BulkString(value)</code></pre>
+    </section>
+
+    <section class="section">
+      <h2>현재 상태를 정확히 말하면</h2>
+      <ul>
+        <li>core storage, dispatcher, TTL 구조는 상당히 명확하다.</li>
+        <li>snapshot 저장/복구 구조도 있다.</li>
+        <li>하지만 TCP 서버와 parser는 아직 role1 최종 구현이 반영되기 전 상태다.</li>
+        <li>snapshot autosave는 아직 background thread를 쓰므로, 완전 단일 스레드 구조로는 role4 쪽 추가 정리가 필요하다.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>읽는 순서 추천</h2>
+      <ol>
+        <li><code>mini_redis/main.py</code></li>
+        <li><code>mini_redis/core/dispatcher.py</code></li>
+        <li><code>mini_redis/core/commands/basic.py</code></li>
+        <li><code>mini_redis/core/storage.py</code></li>
+        <li><code>mini_redis/core/commands/ttl.py</code></li>
+        <li><code>mini_redis/expiration/manager.py</code></li>
+        <li><code>mini_redis/protocol/serializer.py</code></li>
+        <li><code>mini_redis/protocol/parser.py</code></li>
+        <li><code>mini_redis/persistence/snapshot.py</code></li>
+      </ol>
+    </section>
+  </div>
+</body>
+</html>
