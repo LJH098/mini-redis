@@ -121,5 +121,11 @@ def test_storage_restore_entries_replaces_existing_state() -> None:
     assert storage.get("fresh") == "new"
 
 
+def test_storage_is_lock_free_for_event_loop_execution() -> None:
+    storage = Storage()
+
+    assert not hasattr(storage, "_lock")
+
+
 if __name__ == "__main__":
     unittest.main()

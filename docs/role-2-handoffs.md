@@ -2,6 +2,15 @@
 
 이 문서는 2번 코어/저장소 브랜치 기준으로, 1번과 3번이 바로 붙을 수 있게 연동 규약만 정리한 문서다.
 
+## 현재 합의된 실행 모델
+
+- 이 프로젝트는 lock 기반이 아니라 단일 스레드 event-loop 모델로 간다.
+- 저장소 접근은 오직 event-loop 스레드 하나에서만 일어난다고 가정한다.
+- 따라서 storage는 의도적으로 lock-free 구조를 유지한다.
+- background thread가 live storage를 직접 건드리면 안 된다.
+- 1번은 이벤트 루프에서 `dispatch(...)`를 sync call로 호출하고, 3번 TTL도 같은 스레드에서 lazy expiration 또는 tick 방식으로 붙는다.
+- 4번 snapshot은 `export_entries()` / `restore_entries()` 훅을 써서 event-loop 경계에서 동기 저장/복구로 연결하는 방향을 전제로 한다.
+
 ## 1번에게 보낼 말
 
 아래 기준으로 붙이면 된다.
