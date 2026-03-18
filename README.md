@@ -172,7 +172,8 @@ docker compose up --build
 - `web`: FastAPI 서버 + 정적 프론트엔드
 - `mongo`: MongoDB
 
-<img width="1695" height="434" alt="image" src="https://github.com/user-attachments/assets/5605fb83-eea7-4cdf-9bc9-540687ff5b7c" />
+<img width="1695" height="451" alt="image" src="https://github.com/user-attachments/assets/6aac3577-a188-4a24-943f-826b92129628" />
+
 
 
 ## 테스트
