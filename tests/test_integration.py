@@ -7,7 +7,7 @@ from mini_redis.config import ServerConfig
 from mini_redis.core.dispatcher import CommandDispatcher, default_handlers
 from mini_redis.core.storage import Storage
 from mini_redis.expiration.manager import get_expiration_manager
-from mini_redis.main import create_components
+from mini_redis.main import _build_maintenance_step, create_components
 from mini_redis.persistence.snapshot import SnapshotError, SnapshotManager, SnapshotRecord
 from mini_redis.protocol.resp_types import BulkString, Integer, NullBulkString, RespError, SimpleString
 
@@ -246,3 +246,36 @@ def test_final_save_still_writes_snapshot_without_background_autosave(tmp_path: 
     manager.final_save()
 
     assert json.loads(snapshot_path.read_text(encoding="utf-8"))["foo"]["value"] == "bar"
+
+
+def test_maintenance_step_cleans_expired_keys_and_saves_snapshot(tmp_path: Path) -> None:
+    expiration_manager = get_expiration_manager()
+    expiration_manager.set_current_time(100.0)
+    try:
+        snapshot_path = tmp_path / "snapshot.json"
+        storage = Storage()
+        storage.set_expiration_checker(expiration_manager.is_expired)
+        storage.set("expired", "gone")
+        storage.set("alive", "here")
+        storage.set_expire_at("expired", expiration_manager.build_expire_at(1))
+        storage.set_expire_at("alive", expiration_manager.build_expire_at(20))
+
+        manager = make_snapshot_manager(
+            snapshot_path,
+            storage,
+            interval_seconds=30.0,
+            time_fn=expiration_manager.now,
+        )
+        maintenance_step = _build_maintenance_step(storage, manager)
+
+        expiration_manager.set_current_time(102.0)
+        maintenance_step(130.0)
+
+        assert storage.get("expired") is None
+        assert storage.get("alive") == "here"
+
+        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        assert "expired" not in payload
+        assert payload["alive"]["value"] == "here"
+    finally:
+        expiration_manager.set_current_time(None)

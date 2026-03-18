@@ -3,6 +3,7 @@ from typing import Optional, Tuple
 from mini_redis.config import ServerConfig
 from mini_redis.core.dispatcher import CommandDispatcher, default_handlers
 from mini_redis.core.storage import Storage
+from mini_redis.expiration.cleanup import cleanup_expired
 from mini_redis.expiration.manager import get_expiration_manager
 from mini_redis.persistence.snapshot import SnapshotManager
 from mini_redis.server.tcp_server import TcpServer
@@ -23,7 +24,7 @@ def create_components(
     snapshot_manager.restore_from_disk()
     dispatcher = CommandDispatcher(storage=storage)
     dispatcher.register_many(default_handlers())
-    maintenance_step = _build_snapshot_maintenance_step(snapshot_manager)
+    maintenance_step = _build_maintenance_step(storage, snapshot_manager)
     server = TcpServer(
         host=resolved_config.host,
         port=resolved_config.port,
@@ -50,15 +51,16 @@ def main() -> None:
         snapshot_manager.final_save()
 
 
-def _build_snapshot_maintenance_step(snapshot_manager: SnapshotManager):
-    last_snapshot_at: Optional[float] = None
+def _build_maintenance_step(storage: Storage, snapshot_manager: SnapshotManager):
+    next_snapshot_at: Optional[float] = snapshot_manager.next_snapshot_at(None)
 
     def maintenance_step(now: float) -> None:
-        nonlocal last_snapshot_at
-        if not snapshot_manager.should_snapshot(last_snapshot_at, now=now):
+        nonlocal next_snapshot_at
+        cleanup_expired(storage)
+        if next_snapshot_at is None or now < next_snapshot_at:
             return
         snapshot_manager.save_now()
-        last_snapshot_at = now
+        next_snapshot_at = snapshot_manager.next_snapshot_at(now)
 
     return maintenance_step
 
