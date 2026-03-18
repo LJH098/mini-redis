@@ -34,7 +34,8 @@ Background
   -> data/snapshot.json
 ```
 
-![alt text](<ChatGPT Image 2026년 3월 18일 오후 09_10_40.png>)
+<img width="1536" height="1024" alt="ChatGPT Image 2026년 3월 18일 오후 09_10_40" src="https://github.com/user-attachments/assets/408a4809-a01a-431d-aa6f-b81b064181b9" />
+
 
 ## 요청 처리 흐름
 
@@ -171,7 +172,8 @@ docker compose up --build
 - `web`: FastAPI 서버 + 정적 프론트엔드
 - `mongo`: MongoDB
 
-![alt text](image.png)
+<img width="1695" height="434" alt="image" src="https://github.com/user-attachments/assets/5605fb83-eea7-4cdf-9bc9-540687ff5b7c" />
+
 
 ## 테스트
 
