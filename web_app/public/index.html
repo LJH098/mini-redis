@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Redis Race Lab</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Mini Redis Demo</p>
+          <h1>좋아요 10번 선착순 게임과 MongoDB vs mini redis 속도 비교</h1>
+          <p class="hero-copy">
+            서버는 MongoDB와 mini redis를 동시에 사용하고, 웹에서는 실시간 승부와 조회 지연 차이를
+            한 화면에서 보여줍니다.
+          </p>
+        </div>
+        <div class="status-card">
+          <span class="status-label">System Status</span>
+          <strong id="health-text">연결 확인 중...</strong>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel game-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Tap Race</p>
+              <h2>먼저 10번 누르면 승리</h2>
+            </div>
+            <button id="reset-btn" class="secondary-button">Reset</button>
+          </div>
+
+          <div class="players">
+            <button class="player-card coral" data-player="left">
+              <span class="player-name">Player A</span>
+              <strong class="score" id="score-left">0</strong>
+              <span class="hint">좋아요 보내기</span>
+            </button>
+            <button class="player-card teal" data-player="right">
+              <span class="player-name">Player B</span>
+              <strong class="score" id="score-right">0</strong>
+              <span class="hint">좋아요 보내기</span>
+            </button>
+          </div>
+
+          <p id="winner-banner" class="winner-banner">아직 승자가 없습니다.</p>
+        </article>
+
+        <article class="panel benchmark-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Latency Probe</p>
+              <h2>같은 데이터를 어디서 읽는 게 더 빠를까</h2>
+            </div>
+            <button id="measure-btn" class="primary-button">측정하기</button>
+          </div>
+
+          <div class="latency-cards">
+            <div class="latency-card">
+              <span>MongoDB</span>
+              <strong id="mongo-ms">-</strong>
+            </div>
+            <div class="latency-card">
+              <span>mini redis</span>
+              <strong id="redis-ms">-</strong>
+            </div>
+          </div>
+
+          <p id="faster-text" class="faster-text">버튼을 눌러 속도 차이를 비교해보세요.</p>
+
+          <div class="payloads">
+            <section>
+              <h3>MongoDB payload</h3>
+              <pre id="mongo-payload">-</pre>
+            </section>
+            <section>
+              <h3>mini redis payload</h3>
+              <pre id="redis-payload">-</pre>
+            </section>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

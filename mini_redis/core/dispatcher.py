@@ -4,6 +4,7 @@ from mini_redis.core.commands.basic import (
     handle_del,
     handle_exists,
     handle_get,
+    handle_incr,
     handle_ping,
     handle_set,
 )
@@ -47,6 +48,7 @@ def default_handlers() -> dict[str, CommandHandler]:
         "GET": handle_get,
         "DEL": handle_del,
         "EXISTS": handle_exists,
+        "INCR": handle_incr,
         "EXPIRE": handle_expire,
         "TTL": handle_ttl,
         "PERSIST": handle_persist,

@@ -25,6 +25,20 @@ class StorageEngine:
         self._store[normalized_key] = entry
         return entry
 
+    def increment(self, key: str, amount: int = 1) -> int:
+        normalized_key = str(key)
+        entry = self.get_entry(normalized_key)
+        if entry is None:
+            value = amount
+            self._store[normalized_key] = Entry(value=str(value))
+            return value
+        try:
+            value = int(entry.value) + amount
+        except ValueError as exc:
+            raise ValueError("value is not an integer") from exc
+        entry.value = str(value)
+        return value
+
     def get_entry(self, key: str) -> Optional[Entry]:
         normalized_key = str(key)
         entry = self._store.get(normalized_key)
